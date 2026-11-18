@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { formatNextAwardDate } from "@/lib/award-date";
-import { CONTEST_2026, formatContest2026EndDate } from "@/lib/contest-2026";
+import { CONTEST_2027, formatContest2027AwardDate } from "@/lib/contest-2027";
+import { ScrambleHeading } from "@/components/scramble-heading";
+import contestCss from "@/styles/contest-2027.css?url";
+import { isValidContact } from "@/lib/contact";
+import { PrizeFan } from "@/components/prize-fan";
+import { BenefitLightCards } from "@/components/benefit-lights";
 import {
   Menu,
   X,
@@ -10,7 +14,6 @@ import {
   ExternalLink,
   Trophy,
   Medal,
-  Award,
   Crown,
   Building2,
   ShieldCheck,
@@ -20,7 +23,6 @@ import {
   CheckCircle2,
   Plus,
   Minus,
-  Palmtree,
   Star,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -29,23 +31,23 @@ import { Toaster } from "@/components/ui/sonner";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Конкурс аналитиков 2026 — конкурс инвестиционных идей" },
+      { title: "Конкурс аналитиков 2027 — конкурс идей по фьючерсам" },
       {
         name: "description",
         content:
-          `Открытый конкурс аналитиков по российскому фондовому рынку с призовым фондом ${CONTEST_2026.fund.toLocaleString("ru-RU")} рублей.`,
+          "Открытый конкурс аналитики по фьючерсам российского рынка. Призовой фонд — 3 000 000 рублей.",
       },
-      { property: "og:title", content: "Конкурс аналитиков 2026" },
+      { property: "og:title", content: "Конкурс аналитиков 2027 — конкурс идей по фьючерсам" },
       {
         property: "og:description",
         content:
-          `Конкурс инвестиционных идей по российскому фондовому рынку. Призовой фонд — ${CONTEST_2026.fund.toLocaleString("ru-RU")} рублей.`,
+          "Конкурс аналитиков 2027: инвестиционные идеи по фьючерсам российского рынка и ежемесячные награды.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: "/" }],
+    links: [{ rel: "canonical", href: "/" }, { rel: "stylesheet", href: contestCss }],
   }),
   component: LandingPage,
 });
@@ -58,8 +60,7 @@ const NAV = [
   { id: "faq", label: "FAQ" },
 ] as const;
 
-const EXAMPLES_URL = "https://invest-idei.ru/unauthorized?pro=0";
-const MOEX_URL = "https://www.moex.com/n100378";
+const EXAMPLES_URL = "https://konkurs.invest-idei.ru/";
 
 function scrollToId(id: string) {
   const el = document.getElementById(id);
@@ -80,7 +81,7 @@ function onAnchorClick(e: React.MouseEvent<HTMLAnchorElement>, id: string) {
 
 function LandingPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="contest-2027 min-h-screen bg-background text-foreground">
       <Toaster richColors theme="dark" />
       <Header />
       <main>
@@ -117,9 +118,9 @@ function ExamplesButton({
       href={EXAMPLES_URL}
       target="_blank"
       rel="noreferrer noopener"
-      className={`group inline-flex items-center justify-center gap-2 ${sizeCls} rounded-xl font-semibold bg-[oklch(0.13_0.02_260)] text-[oklch(0.85_0.14_85)] border border-[oklch(0.85_0.14_85)]/40 hover:border-[oklch(0.85_0.14_85)] hover:bg-[oklch(0.16_0.025_260)] transition-colors ${className}`}
+      className={`group inline-flex items-center justify-center gap-2 ${sizeCls} rounded-lg font-semibold bg-background text-gold border border-gold/40 hover:border-gold hover:bg-surface transition-colors ${className}`}
     >
-      <span>Примеры идей</span>
+      <span>Результаты</span>
       <ExternalLink className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
     </a>
   );
@@ -138,14 +139,19 @@ function Header() {
         <a
           href={anchorHref("about")}
           onClick={(e) => onAnchorClick(e, "about")}
-          className="flex items-center gap-2 group"
-          aria-label="Конкурс аналитиков 2026"
+          className="flex min-w-0 items-center gap-2 group"
+          aria-label="Срочка и точка"
         >
-          <span className="grid place-items-center w-9 h-9 rounded-lg bg-gradient-primary shadow-glow">
+          <span className="grid shrink-0 place-items-center w-9 h-9 rounded-lg bg-gradient-primary shadow-glow">
             <Crown className="h-5 w-5 text-primary-foreground" />
           </span>
-          <span className="font-display font-bold tracking-tight text-base sm:text-lg">
-            Конкурс аналитиков <span className="text-gradient-primary">2026</span>
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="font-display font-bold text-sm sm:text-lg leading-tight">
+              Срочка <span className="text-gradient-primary">и точка</span>
+            </span>
+            <span className="text-[10px] sm:text-[11px] font-light leading-tight text-muted-foreground">
+              Конкурс аналитики
+            </span>
           </span>
         </a>
 
@@ -233,22 +239,22 @@ function Hero() {
             <span className="absolute inline-flex h-full w-full rounded-full bg-accent-cyan opacity-75 animate-pulse-dot" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-cyan" />
           </span>
-          Регистрация открыта · Старт — май 2026
+          Регистрация открыта. Старт — ноябрь 2026
         </div>
 
-        <h1
-          className="mt-6 mx-auto max-w-4xl font-display font-extrabold leading-[1.05] tracking-tight text-[2rem] sm:text-6xl lg:text-7xl animate-slide-up"
-          style={{ animationDelay: "60ms" }}
-        >
-          Сделаем <span className="text-gradient-primary">финансовую аналитику</span>{" "}
-          великой снова
-        </h1>
+        <ScrambleHeading />
 
         <p
           className="mt-5 mx-auto max-w-2xl text-base sm:text-xl text-muted-foreground animate-slide-up"
           style={{ animationDelay: "120ms" }}
         >
-          Открытый конкурс аналитики по российскому фондовому рынку
+          Конкурс инвест-идей{" "}
+          <span className="contest-marker">
+            по срочному рынку
+            <svg className="contest-marker-oval" viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true">
+              <path pathLength="1" d="M108 6C60 3 12 10 6 30c-5 18 40 26 96 25 52-1 94-9 92-27C192 12 150 4 96 6 70 7 44 11 30 16" />
+            </svg>
+          </span>
         </p>
 
         <div
@@ -296,43 +302,52 @@ function Hero() {
 /* ---------- AWARDS ---------- */
 
 function Awards() {
+  const [awardDate, setAwardDate] = useState("1 января 2027 года");
+  useEffect(() => {
+    const refresh = () => setAwardDate(formatContest2027AwardDate());
+    refresh();
+    const timer = setInterval(refresh, 30_000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { clearInterval(timer); document.removeEventListener("visibilitychange", refresh); };
+  }, []);
+  const money = (value: number) => `${new Intl.NumberFormat("ru-RU").format(value)} ₽`;
   return (
     <section id="awards" className="relative py-12 sm:py-16 scroll-mt-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
         <SectionEyebrow icon={<Trophy className="h-3.5 w-3.5" />}>Награды</SectionEyebrow>
         <h2 className="mt-3 font-display font-bold text-3xl sm:text-5xl">Призовой фонд</h2>
 
-        <div className="mt-10 rounded-3xl border border-border bg-surface p-6 sm:p-10 shadow-elegant overflow-hidden relative text-left">
+        <div className="contest-fund mt-7 p-5 sm:p-8 overflow-hidden relative text-left">
           <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-gradient-gold opacity-20 blur-3xl" />
           <div className="relative grid lg:grid-cols-2 gap-4 lg:gap-8 items-center">
             <div className="text-center lg:text-left">
-              <div className="mt-2 font-display font-extrabold tracking-tight text-gradient-gold leading-none whitespace-nowrap text-[clamp(2rem,11vw,5rem)] lg:text-[clamp(2rem,5.2vw,5rem)]">
-                {CONTEST_2026.fund.toLocaleString("ru-RU")}&nbsp;₽
+              <div className="contest-fund-amount mt-2 font-display font-extrabold text-gradient-gold leading-none whitespace-nowrap">
+                {money(CONTEST_2027.fund)}
               </div>
               <div className="mt-3 text-sm sm:text-base text-muted-foreground">
-                Распределяем среди лучших аналитиков
+                Предлагайте идеи, соревнуйтесь за лучшую доходность и получайте призы!
               </div>
             </div>
 
-            <div className="rounded-2xl border border-gold/20 bg-background/30 px-5 py-5 sm:px-6 sm:py-6">
+            <div className="contest-fund-split px-4 py-5 sm:px-6 sm:py-6">
               <div className="flex items-center justify-center gap-3 sm:gap-4">
                 <div className="text-center">
-                  <div className="font-display font-bold leading-none text-gradient-gold text-[clamp(2rem,5vw,3rem)]">
-                    {CONTEST_2026.months}
+                  <div className="font-display font-bold leading-none text-gradient-gold text-4xl sm:text-5xl">
+                    {CONTEST_2027.months}
                   </div>
                   <div className="mt-1.5 text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                    месяцев
+                    этапов
                   </div>
                 </div>
-                <div className="font-display font-light text-gold/60 text-[clamp(1.25rem,3vw,1.75rem)] leading-none">
+                <div className="font-display font-light text-gold/60 text-2xl leading-none">
                   ×
                 </div>
                 <div className="text-center">
-                  <div className="font-display font-bold leading-none text-gradient-gold text-[clamp(1.5rem,4vw,2.25rem)] whitespace-nowrap">
-                    {CONTEST_2026.monthlyFund.toLocaleString("ru-RU")}&nbsp;₽
+                  <div className="font-display font-bold leading-none text-gradient-gold text-2xl sm:text-4xl whitespace-nowrap">
+                    {money(CONTEST_2027.monthlyFund)}
                   </div>
                   <div className="mt-1.5 text-[10px] sm:text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                    каждый месяц
+                    каждый этап
                   </div>
                 </div>
               </div>
@@ -341,87 +356,32 @@ function Awards() {
           </div>
         </div>
 
-        <div className="mt-14 text-center">
+        <div className="mt-8 text-center">
           <h3 className="font-display font-bold text-2xl sm:text-3xl">Награды и признание</h3>
           <p className="mt-3 mx-auto max-w-2xl text-muted-foreground">
-            Каждый месяц определяем самые доходные инвест-идеи и награждаем
-            авторов.
+            <span className="contest-marker">
+              Каждый месяц
+              <svg className="contest-marker-oval" viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true">
+                <path pathLength="1" d="M108 6C60 3 12 10 6 30c-5 18 40 26 96 25 52-1 94-9 92-27C192 12 150 4 96 6 70 7 44 11 30 16" />
+              </svg>
+            </span>{" "}награждаем авторов идей, показавших максимальную доходность
           </p>
 
-          <div className="mt-8 grid md:grid-cols-3 gap-5 text-left">
-            <NominationCard
-              tier="gold"
-              title="Лучшая идея по акциям"
-              prize="500 000 ₽"
-            />
-            <NominationCard
-              tier="primary"
-              title="Лучшая идея на рынке коллективных инвестиций"
-              prize="350 000 ₽"
-            />
-            <NominationCard
-              tier="bronze"
-              title="Лучшая идея на внебиржевом рынке"
-              prize="50 000 ₽"
-            />
-          </div>
+          <PrizeFan prizes={CONTEST_2027.prizes.map((prize, index) => ({ rank: index + 1, amount: money(prize) }))} />
         </div>
 
-        <div className="mt-10 inline-flex items-center gap-3 px-5 py-3 rounded-full border border-border bg-surface/70 backdrop-blur">
+        <div className="mt-6 inline-flex max-w-full items-center gap-3 px-5 py-3 rounded-lg border border-border bg-surface/70 backdrop-blur">
           <span className="relative flex h-2.5 w-2.5">
             <span className="absolute inline-flex h-full w-full rounded-full bg-accent-cyan opacity-75 animate-pulse-dot" />
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent-cyan" />
           </span>
           <span className="text-sm sm:text-base">
             Ближайшее награждение —{" "}
-            <span className="font-semibold">{formatNextAwardDate()}</span>
+            <span className="font-semibold">{awardDate}</span>
           </span>
         </div>
       </div>
     </section>
-  );
-}
-
-function NominationCard({
-  tier,
-  title,
-  prize,
-}: {
-  tier: "gold" | "primary" | "bronze";
-  title: string;
-  prize: string;
-}) {
-  const tierStyle =
-    tier === "gold"
-      ? "from-[oklch(0.85_0.14_85)]/25 to-transparent"
-      : tier === "primary"
-        ? "from-[oklch(0.66_0.16_250)]/25 to-transparent"
-        : "from-[oklch(0.65_0.12_55)]/25 to-transparent";
-  return (
-    <div className="group relative rounded-2xl border border-border bg-surface p-6 overflow-hidden transition hover:-translate-y-1 hover:border-foreground/20 hover:shadow-elegant">
-      <div className={`absolute inset-x-0 top-0 h-32 bg-gradient-to-b ${tierStyle} opacity-80`} />
-      <div className="relative">
-        <div className="flex items-center gap-2.5">
-          <Trophy className="h-5 w-5 text-gold" />
-          <Medal className="h-5 w-5 text-silver" />
-          <Award className="h-5 w-5 text-bronze" />
-        </div>
-        <h4 className="mt-5 font-display font-bold text-lg leading-snug min-h-[3.5rem]">{title}</h4>
-        <div className="mt-2 text-xs uppercase tracking-wider text-muted-foreground">
-          ТОП-1
-        </div>
-        <div className="font-display font-extrabold text-3xl text-gradient-gold mt-1">
-          {prize}
-        </div>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Денежный приз и лидерство в номинации
-        </p>
-        <div className="mt-4 h-px w-full bg-border" />
-        <p className="mt-4 text-sm text-muted-foreground">
-          ТОП-2 и ТОП-3: признание и место в рейтинге
-        </p>
-      </div>
-    </div>
   );
 }
 
@@ -432,7 +392,7 @@ function Format() {
     {
       n: "1",
       title: "Вы делитесь идеей",
-      text: "Пишете в своём канале, блоге или на сайте: «Думаем, что акция X вырастет до Y по следующим причинам».",
+      text: "Пишете в своём канале, блоге или рассылке: «Думаем, что инструмент X вырастет или упадет до уровня Y по следующим причинам».",
     },
     {
       n: "2",
@@ -447,7 +407,7 @@ function Format() {
     {
       n: "4",
      title: "Лучшие получают награды",
-     text: "В конце каждого месяца авторы лучших идей получают статус чемпиона и денежный приз.",
+     text: "Каждый месяц авторы 3 идей, которые сработали и показали лучшие результаты получают награду",
     },
   ];
   return (
@@ -458,7 +418,7 @@ function Format() {
           Как это работает
         </h2>
         <p className="mt-4 mx-auto max-w-2xl text-muted-foreground text-base sm:text-lg">
-          Вы продолжаете создавать аналитику, а мы доносим ваши идеи до широкой
+          Вы продолжаете создавать аналитику, а мы включаем ее в базу и доносим до широкой
           аудитории.
         </p>
 
@@ -512,7 +472,6 @@ function Format() {
 function Participation() {
   const cards = [
     {
-      icon: <Building2 className="h-6 w-6" />,
       tag: "Институционалы",
       title: "Профессиональные аналитики",
       text: "",
@@ -521,10 +480,9 @@ function Participation() {
         "Управляющие компании",
         "Банки и инвест-дома",
       ],
-      accent: "primary" as const,
+      accent: "silver" as const,
     },
     {
-      icon: <Palmtree className="h-6 w-6" />,
       tag: "Инфлюенсеры",
       title: "Независимые авторы",
       text: "",
@@ -534,24 +492,21 @@ function Participation() {
         "Авторские рассылки",
         "Сайты и сервисы аналитики",
       ],
-      accent: "gold" as const,
+      accent: "bronze" as const,
     },
   ];
   const benefits = [
     {
-      icon: <Star className="h-5 w-5" />,
-      title: "Честный знак качества",
-      text: "Независимая оценка вашей аналитики и публичное подтверждение качества инвестиционных идей.",
+      title: "Знак качества аналитики",
+      text: "Независимая оценка вашей аналитики и регулярное попадание в рейтинг лучших аналитиков рынка.",
     },
     {
-      icon: <Megaphone className="h-5 w-5" />,
       title: "Продвижение бренда",
       text: "Идеи автоматически транслируются на сотни тысяч инвесторов: на сайте Invest-idei.ru, ресурсах Мосбиржи, приложениях ведущих брокеров с вашим именем и ссылкой.",
     },
     {
-      icon: <Medal className="h-5 w-5" />,
-      title: "Награды и признание",
-      text: "Денежные призы, статус победителя и регулярное попадание в рейтинг лучших аналитиков рынка.",
+      title: "Награды",
+      text: "Денежные призы и статус победителя",
     },
   ];
   return (
@@ -562,33 +517,37 @@ function Participation() {
           Кто может участвовать
         </h2>
 
-        <div className="mt-10 mx-auto max-w-5xl grid md:grid-cols-2 gap-5 text-left">
+        <div className="participant-passes mt-10 mx-auto max-w-5xl grid md:grid-cols-2 gap-5 text-left">
           {cards.map((c) => {
-            const isGold = c.accent === "gold";
             return (
-              <div
+              <article
                 key={c.title}
-                className="group relative rounded-3xl border border-border bg-gradient-to-br from-surface-2 to-surface p-7 sm:p-8 overflow-hidden transition hover:-translate-y-1 hover:border-foreground/25 hover:shadow-elegant"
+                className={`participant-pass participant-pass-${c.accent}`}
               >
-                <div
-                  className={`absolute -top-20 -right-20 h-56 w-56 rounded-full blur-3xl opacity-25 ${
-                    isGold ? "bg-gradient-gold" : "bg-gradient-primary"
-                  }`}
-                />
-                <div className="relative">
-                  <div className="flex items-center justify-between">
-                    <div
-                      className={`grid place-items-center w-14 h-14 rounded-2xl text-primary-foreground shadow-glow ${
-                        isGold ? "bg-gradient-gold text-background" : "bg-gradient-primary"
-                      }`}
-                    >
-                      {c.icon}
-                    </div>
-                    <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground px-2.5 py-1 rounded-full border border-border bg-background/40">
-                      {c.tag}
-                    </span>
+                <div className="participant-pass-rail" aria-hidden="true"><span /></div>
+                <div className="participant-pass-body">
+                  <div className="participant-pass-header">
+                    <span className="participant-pass-category font-display">{c.tag}</span>
+                    <svg className="participant-pass-emblem" viewBox="0 0 64 64" fill="none" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      {c.accent === "silver" ? (
+                        <>
+                          {/* Front-facing office chair: broad padded back and simple wheeled base. */}
+                          <rect x="21" y="7" width="22" height="27" rx="7" />
+                          <rect x="18" y="36" width="28" height="7" rx="3.5" />
+                          <path d="M18 28h-5v11h5m28-11h5v11h-5M32 43v10m-13 4 13-4 13 4" />
+                          <circle cx="19" cy="58" r="2" />
+                          <circle cx="45" cy="58" r="2" />
+                        </>
+                      ) : (
+                        <>
+                          {/* Front-facing beach chair: plain fabric sling and folding X frame. */}
+                          <path d="M18 8h28l-3 27H21L18 8Zm10 0v27m8-27v27M21 35l-4 7h30l-4-7" />
+                          <path d="M17 42l29 16M47 42 18 58M14 58h8m20 0h8M17 30h-5v12h5m30-12h5v12h-5" />
+                        </>
+                      )}
+                    </svg>
                   </div>
-                  <h3 className="mt-6 font-display font-bold text-2xl">{c.title}</h3>
+                  <h3 className="participant-pass-title font-display font-bold">{c.title}</h3>
                   {c.text && (
                     <p className="mt-2.5 text-sm sm:text-[15px] text-muted-foreground leading-relaxed">
                       {c.text}
@@ -599,43 +558,22 @@ function Participation() {
                       {c.footnote}
                     </p>
                   )}
-                  <ul className="mt-5 space-y-2.5 pt-5 border-t border-border">
+                  <ul className="participant-pass-list">
                     {c.bullets.map((b) => (
-                      <li key={b} className="flex items-center gap-2.5 text-sm">
-                        <CheckCircle2
-                          className={`h-4 w-4 shrink-0 ${
-                            isGold ? "text-[oklch(0.85_0.14_85)]" : "text-accent-cyan"
-                          }`}
-                        />
-                        <span className="text-foreground/90">{b}</span>
+                      <li key={b}>
+                        <span>{b}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>
 
         <div className="mt-16 text-center">
           <h3 className="font-display font-bold text-2xl sm:text-3xl">Что получает участник</h3>
-          <div className="mt-8 grid md:grid-cols-3 gap-5 text-left">
-            {benefits.map((b) => (
-              <div
-                key={b.title}
-                className="relative rounded-2xl border border-border bg-gradient-to-b from-surface-2 to-surface p-6 overflow-hidden"
-              >
-                <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-gradient-primary opacity-15 blur-2xl" />
-                <div className="relative">
-                  <div className="grid place-items-center w-11 h-11 rounded-lg bg-gradient-primary text-primary-foreground shadow-glow">
-                    {b.icon}
-                  </div>
-                  <h4 className="mt-5 font-display font-semibold text-lg">{b.title}</h4>
-                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{b.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <BenefitLightCards benefits={benefits} />
         </div>
 
         <div className="mt-12 flex justify-center">
@@ -662,7 +600,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Сколько идет конкурс?",
-    a: `Идеи на конкурс можно присылать с 25 мая 2026 года по ${formatContest2026EndDate()}. Победителей месяца объявляем первого числа каждого месяца с июля по декабрь 2026.`,
+    a: "Идеи на конкурс можно присылать с 23 ноября 2026 года по 31 мая 2027 года. Победителей месяца объявляем первого числа каждого месяца с января по июнь 2027.",
   },
   {
     q: "Кто может принять участие?",
@@ -670,7 +608,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Какие идеи принимаются?",
-    a: "Можно присылать инвестиционные идеи на инструменты Московской биржи: 1) акции, допущенные к организованным торгам; 2) акции, с которыми возможно заключение внебиржевых сделок; 3) инструменты рынка коллективных инвестиций (БПИФ, ОПИФ, ИПИФ, ЗПИФ). Можно делать идеи на отдельные инструменты, а также предлагать в качестве идеи портфель из нескольких инструментов. Можно присылать идеи на «Лонг» и/или на «Шорт».",
+    a: "Можно присылать инвестиционные идеи на инструменты срочного рынка Московской биржи: 1) срочные фьючерсы; 2) вечные фьючерсы. Можно делать идеи на отдельные инструменты, а также предлагать в качестве идеи портфель из нескольких инструментов. Можно присылать идеи на «Лонг» и/или на «Шорт».",
   },
   {
     q: "Нужно ли отправлять каждую идею вручную?",
@@ -678,7 +616,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Как определяются лучшие идеи месяца?",
-    a: "Лучшие идеи месяца определяются в трёх номинациях: «Лучшая идея на рынке акций», «Лучшая идея на рынке коллективных инвестиций», «Лучшая идея на внебиржевом рынке». Лучшей считается идея, которая была закрыта по достижению целевой цены или по уведомлению от аналитика в текущем месяце с максимальной доходностью (при условии, что эта доходность больше нуля) относительно всех других закрытых идей. Если в текущем месяце нет закрытых идей с положительной доходностью, то в качестве лучшей идеи месяца признаётся одна из активных идей. А именно — идея, которая показала максимальную положительную доходность в текущем месяце в своей категории.",
+    a: "Лучшие идеи месяца определяются по доходности. Лучшей считается идея, которая была закрыта по достижению целевой цены или по уведомлению от аналитика в текущем месяце с максимальной доходностью с момента старта (при условии, что эта доходность больше нуля) относительно всех других закрытых идей. Если в текущем месяце нет закрытых идей с положительной доходностью, то поиск лучшей идеи месяца происходит среди активных идей. А именно — идей, которые показали максимальную положительную доходность в текущем месяце. Для награждения организатор определяет три идеи с максимальной доходностью, упорядоченные по убыванию.",
   },
   {
     q: "Можно ли получить несколько наград?",
@@ -746,9 +684,9 @@ const applicationSchema = z.object({
   email: z
     .string()
     .trim()
-    .min(1, { message: "Укажите email для связи" })
-    .max(254, { message: "Email слишком длинный" })
-    .email({ message: "Введите корректный email" }),
+    .min(1, { message: "Укажите e-mail или Telegram для связи" })
+    .max(254, { message: "Слишком длинное значение" })
+    .refine(isValidContact, { message: "Введите e-mail или Telegram в формате @username" }),
 });
 
 function Apply() {
@@ -837,19 +775,6 @@ function ApplyForm() {
 
   return (
     <form ref={formRef} onSubmit={onSubmit} className="space-y-5" noValidate>
-      <Field id="name" label="Ваше имя / Бренд" error={errors.name}>
-        <input
-          id="name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Федор Баффет"
-          className="w-full h-12 px-4 rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
-          aria-invalid={!!errors.name}
-          required
-        />
-      </Field>
-
       <Field id="status" label="Статус" error={errors.status}>
         <div
           role="radiogroup"
@@ -878,6 +803,19 @@ function ApplyForm() {
         </div>
       </Field>
 
+      <Field id="name" label="Ваше имя / Бренд" error={errors.name}>
+        <input
+          id="name"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={status === "Частный аналитик" ? "Финансовый гений" : "Фьючерс-банк"}
+          className="w-full h-12 px-4 rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
+          aria-invalid={!!errors.name}
+          required
+        />
+      </Field>
+
       <Field
         id="link"
         label="Ссылка на компанию, блог, канал или сайт"
@@ -895,15 +833,14 @@ function ApplyForm() {
         />
       </Field>
 
-      <Field id="email" label="E-mail для связи" error={errors.email}>
+      <Field id="email" label="Как с вами связаться" error={errors.email}>
         <input
           id="email"
-          type="email"
+          type="text"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
+          placeholder="you@example.com или @username"
           autoComplete="email"
-          inputMode="email"
           className="w-full h-12 px-4 rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
           aria-invalid={!!errors.email}
           required
@@ -964,11 +901,11 @@ function Footer() {
                 <Crown className="h-5 w-5 text-primary-foreground" />
               </span>
               <span className="font-display font-bold text-lg">
-                Конкурс аналитиков <span className="text-gradient-primary">2026</span>
+                Срочка <span className="text-gradient-primary">и точка</span>
               </span>
             </div>
             <p className="mt-4 text-sm text-muted-foreground max-w-md">
-              Открытый конкурс аналитики по российскому фондовому рынку.
+              Открытый конкурс аналитики по фьючерсам российского рынка.
               Организатор — Invest-idei.ru при поддержке ПАО Московская Биржа.
             </p>
             <a
@@ -1006,23 +943,23 @@ function Footer() {
             <ul className="mt-4 space-y-2.5 text-sm">
               <li>
                 <a
-                  href={MOEX_URL}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="text-foreground/80 hover:text-foreground transition-colors inline-flex items-center gap-1.5"
-                >
-                  Информация на сайте Мосбиржи
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://invest-idei.ru/uploads/6a1502b95023c.pdf"
+                  href="https://invest-idei.ru/uploads/6afdf10e48d7e.pdf"
                   target="_blank"
                   rel="noreferrer noopener"
                   className="text-foreground/80 hover:text-foreground transition-colors inline-flex items-center gap-1.5"
                 >
                   Регламент конкурса
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://t.me/investidei_konkurs"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="text-foreground/80 hover:text-foreground transition-colors inline-flex items-center gap-1.5"
+                >
+                  Канал для аналитиков
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </li>
